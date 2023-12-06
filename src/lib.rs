@@ -8,7 +8,6 @@ use ndarray::Array3;
 pub enum ShapeType {
     Square,
     Circle,
-    Triangle,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -173,11 +172,26 @@ impl Entry {
         entry
     }
 
+    fn render_square_at_coordinate(image: &mut Array3<f64>, shape: &Shape, size: usize) {
+        let float_to_coord = |f: f64| (f * (size as f64)) as u16;
+        // TODO: render square onto image
+    }
+
+    fn render_circle(image: &mut Array3<f64>, shape: &Shape, size: usize) {
+        let float_to_coord = |f: f64| (f * (size as f64)) as u16;
+        // TODO: render circle onto image
+    }
+
     fn render_entry(&self, size: u16) -> Array3<f64> {
         let size = size as usize;
         let mut image = Array3::zeros((3, size, size));
 
-        // TODO: iterate over each shape and display it on image
+        for shape in self.shapes.iter() {
+            match shape.shape_type {
+                ShapeType::Circle => Entry::render_circle(&mut image, shape, size),
+                ShapeType::Square => Entry::render_square(&mut image, shape, size),
+            };
+        }
         image
     }
 }
