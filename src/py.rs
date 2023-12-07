@@ -1,4 +1,5 @@
 use numpy::{IntoPyArray, PyArray3};
+use pyo3::types::PyTuple;
 use pyo3::{pyclass, pymethods, pymodule, types::PyModule, PyResult, Python};
 
 use crate::{Dataset, ShapeType};
@@ -52,18 +53,26 @@ fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
 
     #[pymethods]
     impl PyDataset {
-        // TODO: param this
         #[new]
-        fn new() -> Self {
-            let dataset = Dataset::new()
+        fn new(
+            colors: Vec<(u8, u8, u8)>,
+            size_range: (f64, f64),
+            position_range: (f64, f64),
+            num_shapes_range: (usize, usize),
+        ) -> Self {
+            let (size_lower, size_upper) = size_range;
+            let (position_lower, position_upper) = position_range;
+            let (shapes_lower, shapes_upper) = num_shapes_range;
+            let mut dataset = Dataset::new()
                 .shape_types(vec![ShapeType::Square, ShapeType::Circle])
-                .add_color(255, 0, 0)
-                .add_color(0, 255, 0)
-                .add_color(0, 0, 255)
-                .size_range(0.1, 0.2)
-                .position_range(0.0, 0.8)
+                .size_range(size_lower, size_upper)
+                .position_range(position_lower, position_upper)
                 .velocity_range(-0.2, 0.2)
-                .num_shapes_range(3, 7);
+                .num_shapes_range(shapes_lower, shapes_upper);
+
+            for (r, g, b) in colors {
+                dataset = dataset.add_color(r, g, b);
+            }
 
             PyDataset { inner: dataset }
         }
