@@ -1,8 +1,8 @@
 // use ndarray::prelude::*;
 
+use funnyshapes::ndarray_to_image;
 use funnyshapes::{Dataset, ShapeType};
 
-use image::RgbImage;
 use std::time::Instant;
 
 use clap::Parser;
@@ -33,24 +33,14 @@ fn main() {
     println!("{:#?}", dataset);
 
     let start_time = Instant::now();
+    let size = args.size;
     // 2650ms with circle, 183ms without
     // improved to 531ms with rayon
     for i in 0..args.num_to_generate {
         let random_entry = dataset.generate_random_entry();
-        // println!("{:#?}", random_entry);
 
-        let size = args.size;
-        let mut arr = random_entry.render_entry(size as u16);
-        arr.swap_axes(0, 2);
-        arr.swap_axes(0, 1);
-        let mut arr = arr.as_standard_layout();
-        arr.mapv_inplace(|v| if v * 255. > 255. { 255. } else { v * 255. });
-
-        let arr = arr.mapv(|v| v as u8);
-
-        let img = RgbImage::from_raw(size, size, arr.to_owned().into_raw_vec())
-            .expect("Failed to create image from raw array!");
-
+        let array = random_entry.render_entry(size as u16);
+        let img = ndarray_to_image(array, size);
         img.save(format!("outputs/test_{i}.png"))
             .expect("Failed to save image!");
 
