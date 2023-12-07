@@ -5,6 +5,7 @@ mod lib;
 use funnyshapes::{Color, Dataset, ShapeType};
 
 use image::{Rgb, RgbImage};
+use std::time::{Duration, Instant};
 
 fn main() {
     let dataset = Dataset::new(64)
@@ -21,8 +22,11 @@ fn main() {
 
     println!("{:#?}", dataset);
 
-    let num_to_generate = 10000;
+    let num_to_generate = 1000;
 
+    let start_time = Instant::now();
+    // 2650ms with circle, 183ms without
+    // improved to 531ms with rayon
     for i in 0..num_to_generate {
         let random_entry = dataset.generate_random_entry();
         // println!("{:#?}", random_entry);
@@ -44,4 +48,6 @@ fn main() {
 
         println!("{} / {num_to_generate} complete.", i + 1);
     }
+    let duration = start_time.elapsed();
+    println!("Time taken: {duration:?}");
 }

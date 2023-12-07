@@ -1,4 +1,5 @@
 use std::collections::btree_map::Range;
+use ndarray::parallel::prelude::*;
 
 use ndarray::AxisDescription;
 use rand::seq::SliceRandom;
@@ -209,15 +210,16 @@ impl Entry {
 
     fn render_circle(image: &mut Array3<f64>, shape: &Shape, size: usize) {
         let coord_to_float = |f: usize| (f as f64) / (size as f64);
+
+        // TODO: this might cause issues when we move shapes later
         let fix_center = |f: f64| ((f * (size as f64)) as usize) as f64 / (size as f64);
-        // TODO: render circle onto image
 
         let radius = shape.size.0 / 2.;
         let x_center = fix_center(shape.position.0 + radius);
         let y_center = fix_center(shape.position.1 + radius);
 
         // TODO: improve this? iterating over every pixel and channel
-        Zip::indexed(image.view_mut()).for_each(|(c, y, x), v| {
+        Zip::indexed(image.view_mut()).par_map_collect(|(c, y, x), v| {
             let xf = coord_to_float(x);
             let yf = coord_to_float(y);
 
@@ -270,6 +272,9 @@ pub struct Dataset {
     num_shapes_range: RangeOrSingle<usize>,
 
     image_size: usize,
+
+    // TODO: background color palette
+    // TODO: weightings for picking shapes / colors
 }
 
 impl Dataset {
