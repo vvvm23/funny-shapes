@@ -14,6 +14,7 @@ name = "main"
 path = "src/main.rs"
 
 [dependencies]
+image = "0.24.7"
 ndarray = { version = "0.15.6", features = ["blas"] }
 numpy = "0.20.0"
 pyo3 = { version = "0.20.0", features = ["extension-module"] }

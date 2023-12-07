@@ -1,9 +1,11 @@
 use std::collections::btree_map::Range;
 
+use ndarray::AxisDescription;
 use rand::seq::SliceRandom;
 use rand::Rng;
 
-use ndarray::Array3;
+use ndarray::prelude::*;
+use ndarray::{Array1, Array3, Slice};
 #[derive(Debug, Copy, Clone)]
 pub enum ShapeType {
     Square,
@@ -22,6 +24,14 @@ impl Color {
         *palette
             .choose(&mut rand::thread_rng())
             .expect("Failed picking random element from color palette")
+    }
+
+    fn to_ndarray(&self) -> Array3<f64> {
+        array![
+            [[(self.0 as f64) / 255.,]],
+            [[(self.1 as f64) / 255.,]],
+            [[(self.2 as f64) / 255.]]
+        ]
     }
 }
 #[derive(Debug)]
@@ -172,24 +182,46 @@ impl Entry {
         entry
     }
 
-    fn render_square_at_coordinate(image: &mut Array3<f64>, shape: &Shape, size: usize) {
-        let float_to_coord = |f: f64| (f * (size as f64)) as u16;
+    pub fn render_square_at_coordinate(image: &mut Array3<f64>, shape: &Shape, size: usize) {
+        let float_to_coord = |f: f64| (f * (size as f64)) as isize;
         // TODO: render square onto image
+
+        let x1 = float_to_coord(shape.position.0);
+        let y1 = float_to_coord(shape.position.1);
+
+        let size_int = float_to_coord(shape.size.0);
+
+        let x2 = float_to_coord(shape.position.0) + size_int;
+        let y2 = float_to_coord(shape.position.1) + size_int;
+
+        let slice_fn = |f: AxisDescription| {
+            let axis = f.axis.0;
+            match axis {
+                0 => Slice::new(0, None, 1),
+                1 => Slice::new(y1, Some(y2 + 1), 1),
+                2 => Slice::new(x1, Some(x2 + 1), 1),
+                _ => panic!(""),
+            }
+        };
+        let mut slice = image.slice_each_axis_mut(slice_fn);
+        slice.assign(&shape.color.to_ndarray());
     }
 
     fn render_circle(image: &mut Array3<f64>, shape: &Shape, size: usize) {
         let float_to_coord = |f: f64| (f * (size as f64)) as u16;
         // TODO: render circle onto image
+
+        Entry::render_square_at_coordinate(image, shape, size);
     }
 
-    fn render_entry(&self, size: u16) -> Array3<f64> {
+    pub fn render_entry(&self, size: u16) -> Array3<f64> {
         let size = size as usize;
         let mut image = Array3::zeros((3, size, size));
 
         for shape in self.shapes.iter() {
             match shape.shape_type {
                 ShapeType::Circle => Entry::render_circle(&mut image, shape, size),
-                ShapeType::Square => Entry::render_square(&mut image, shape, size),
+                ShapeType::Square => Entry::render_square_at_coordinate(&mut image, shape, size),
             };
         }
         image
