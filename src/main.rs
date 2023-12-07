@@ -14,7 +14,10 @@ use clap::Parser;
 #[command(propagate_version = true)]
 struct Config {
     #[arg(long, short)]
-    num_to_generate: i32,
+    num_to_generate: u32,
+
+    #[arg(long, short)]
+    size: u32
 }
 
 fn main() {
@@ -40,7 +43,7 @@ fn main() {
         let random_entry = dataset.generate_random_entry();
         // println!("{:#?}", random_entry);
 
-        let size: u32 = 128;
+        let size = args.size;
         let mut arr = random_entry.render_entry(size as u16);
         arr.swap_axes(0, 2);
         arr.swap_axes(0, 1);
