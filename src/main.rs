@@ -7,7 +7,18 @@ use funnyshapes::{Color, Dataset, ShapeType};
 use image::{Rgb, RgbImage};
 use std::time::{Duration, Instant};
 
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Config {
+    #[arg(long, short)]
+    num_to_generate: i32,
+}
+
 fn main() {
+    let args = Config::parse();
     let dataset = Dataset::new(64)
         .shape_types(vec![ShapeType::Square, ShapeType::Circle])
         .color_palette(vec![
@@ -22,12 +33,10 @@ fn main() {
 
     println!("{:#?}", dataset);
 
-    let num_to_generate = 1000;
-
     let start_time = Instant::now();
     // 2650ms with circle, 183ms without
     // improved to 531ms with rayon
-    for i in 0..num_to_generate {
+    for i in 0..args.num_to_generate {
         let random_entry = dataset.generate_random_entry();
         // println!("{:#?}", random_entry);
 
@@ -46,7 +55,7 @@ fn main() {
         img.save(format!("outputs/test_{i}.png"))
             .expect("Failed to save image!");
 
-        println!("{} / {num_to_generate} complete.", i + 1);
+        println!("{} / {} complete.", i + 1, args.num_to_generate);
     }
     let duration = start_time.elapsed();
     println!("Time taken: {duration:?}");

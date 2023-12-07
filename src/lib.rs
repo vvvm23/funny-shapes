@@ -1,5 +1,5 @@
-use std::collections::btree_map::Range;
 use ndarray::parallel::prelude::*;
+use std::collections::btree_map::Range;
 
 use ndarray::AxisDescription;
 use rand::seq::SliceRandom;
@@ -272,7 +272,6 @@ pub struct Dataset {
     num_shapes_range: RangeOrSingle<usize>,
 
     image_size: usize,
-
     // TODO: background color palette
     // TODO: weightings for picking shapes / colors
 }
