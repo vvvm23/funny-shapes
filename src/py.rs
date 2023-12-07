@@ -1,5 +1,4 @@
-use numpy::{IntoPyArray, PyArray3, PyReadonlyArrayDyn};
-use pyo3::types::PyLong;
+use numpy::{IntoPyArray, PyArray3};
 use pyo3::{pyclass, pymethods, pymodule, types::PyModule, PyResult, Python};
 
 use crate::{Dataset, ShapeType};
@@ -53,6 +52,7 @@ fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
 
     #[pymethods]
     impl PyDataset {
+        // TODO: param this
         #[new]
         fn new() -> Self {
             let dataset = Dataset::new()
