@@ -5,7 +5,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 
 use ndarray::prelude::*;
-use ndarray::{Array1, Array3, Slice};
+use ndarray::{Array3, Slice, Zip};
 #[derive(Debug, Copy, Clone)]
 pub enum ShapeType {
     Square,
@@ -182,7 +182,7 @@ impl Entry {
         entry
     }
 
-    pub fn render_square_at_coordinate(image: &mut Array3<f64>, shape: &Shape, size: usize) {
+    fn render_square(image: &mut Array3<f64>, shape: &Shape, size: usize) {
         let float_to_coord = |f: f64| (f * (size as f64)) as isize;
         // TODO: render square onto image
 
@@ -208,10 +208,36 @@ impl Entry {
     }
 
     fn render_circle(image: &mut Array3<f64>, shape: &Shape, size: usize) {
-        let float_to_coord = |f: f64| (f * (size as f64)) as u16;
+        let coord_to_float = |f: usize| (f as f64) / (size as f64);
+        let fix_center = |f: f64| ((f * (size as f64)) as usize) as f64 / (size as f64);
         // TODO: render circle onto image
 
-        Entry::render_square_at_coordinate(image, shape, size);
+        let radius = shape.size.0 / 2.;
+        let x_center = fix_center(shape.position.0 + radius);
+        let y_center = fix_center(shape.position.1 + radius);
+
+        // TODO: improve this? iterating over every pixel and channel
+        Zip::indexed(image.view_mut()).for_each(|(c, y, x), v| {
+            let xf = coord_to_float(x);
+            let yf = coord_to_float(y);
+
+            let dist = ((xf - x_center).powf(2.0) + (yf - y_center).powf(2.0)).sqrt();
+
+            if dist <= radius {
+                *v = {
+                    // TODO: this in particular sucks
+                    let color = match c {
+                        0 => shape.color.0,
+                        1 => shape.color.1,
+                        2 => shape.color.2,
+                        _ => panic!("Index out of range"),
+                    };
+                    (color as f64) / 255.
+                }
+            };
+        });
+
+        // Entry::render_square_at_coordinate(image, shape, size);
     }
 
     pub fn render_entry(&self, size: u16) -> Array3<f64> {
@@ -221,7 +247,7 @@ impl Entry {
         for shape in self.shapes.iter() {
             match shape.shape_type {
                 ShapeType::Circle => Entry::render_circle(&mut image, shape, size),
-                ShapeType::Square => Entry::render_square_at_coordinate(&mut image, shape, size),
+                ShapeType::Square => Entry::render_square(&mut image, shape, size),
             };
         }
         image
