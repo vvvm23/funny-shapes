@@ -1,11 +1,9 @@
 // use ndarray::prelude::*;
 
-mod lib;
-
 use funnyshapes::{Color, Dataset, ShapeType};
 
-use image::{Rgb, RgbImage};
-use std::time::{Duration, Instant};
+use image::RgbImage;
+use std::time::Instant;
 
 use clap::Parser;
 
@@ -22,7 +20,7 @@ struct Config {
 
 fn main() {
     let args = Config::parse();
-    let dataset = Dataset::new(64)
+    let dataset = Dataset::new()
         .shape_types(vec![ShapeType::Square, ShapeType::Circle])
         .color_palette(vec![
             Color::new(255, 0, 0),
