@@ -1,6 +1,6 @@
 // use ndarray::prelude::*;
 
-use funnyshapes::{Color, Dataset, ShapeType};
+use funnyshapes::{Dataset, ShapeType};
 
 use image::RgbImage;
 use std::time::Instant;
@@ -15,18 +15,16 @@ struct Config {
     num_to_generate: u32,
 
     #[arg(long, short)]
-    size: u32
+    size: u32,
 }
 
 fn main() {
     let args = Config::parse();
     let dataset = Dataset::new()
         .shape_types(vec![ShapeType::Square, ShapeType::Circle])
-        .color_palette(vec![
-            Color::new(255, 0, 0),
-            Color::new(0, 255, 0),
-            Color::new(0, 0, 255),
-        ])
+        .add_color(255, 0, 0)
+        .add_color(0, 255, 0)
+        .add_color(0, 0, 255)
         .size_range(0.1, 0.2)
         .position_range(0.0, 0.8)
         .velocity_range(-0.2, 0.2)
