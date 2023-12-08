@@ -21,3 +21,4 @@ ndarray = { version = "0.15.6", features = ["blas", "rayon"] }
 numpy = "0.20.0"
 pyo3 = { version = "0.20.0", features = ["extension-module"] }
 rand = "0.8.5"
+rayon = "1.8.0"

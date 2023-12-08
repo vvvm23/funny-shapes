@@ -1,9 +1,10 @@
-use numpy::{IntoPyArray, PyArray3};
-use pyo3::types::PyTuple;
+use ndarray::parallel::prelude::IntoParallelIterator;
+use numpy::{IntoPyArray, PyArray3, PyArray4, ToPyArray};
 use pyo3::{pyclass, pymethods, pymodule, types::PyModule, PyResult, Python};
+use rayon::prelude::*;
 
 use crate::{Dataset, ShapeType};
-use ndarray::Array3;
+use ndarray::{stack, Array3, ArrayView3, Axis};
 
 #[pymodule]
 fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
@@ -81,6 +82,25 @@ fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
         fn get_random_frame_py<'py>(&self, py: Python<'py>, size: u16) -> &'py PyArray3<f64> {
             let array = self.get_random_frame(size);
             array.into_pyarray(py)
+        }
+
+        #[pyo3(name = "get_random_frame_batch")]
+        fn get_random_frame_batch_py<'py>(
+            &self,
+            py: Python<'py>,
+            batch_size: usize,
+            size: u16,
+        ) -> &'py PyArray4<f64> {
+            let mut frames = Vec::with_capacity(batch_size);
+            (0..batch_size)
+                .into_par_iter()
+                .map(|_| self.get_random_frame(size))
+                .collect_into_vec(&mut frames);
+
+            let frames: Vec<ArrayView3<f64>> = frames.iter().map(|f| ArrayView3::from(f)).collect();
+            let frames = stack(Axis(0), &frames).expect("TODO");
+
+            frames.to_pyarray(py)
         }
     }
 
