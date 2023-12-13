@@ -1,9 +1,14 @@
+use std::intrinsics::offset;
+
 use rand::seq::SliceRandom;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::IntoParallelRefMutIterator;
+use rayon::iter::ParallelIterator
 
 use super::shape::{Color, Position, Shape, ShapeType, Size, Velocity, NewRandom1, NewRandom2};
 use super::RangeOrSingle;
 
-use ndarray::{Array1, Array3, AxisDescription, Slice, Zip};
+use ndarray::{Array1, Array2, Array3, AxisDescription, Slice, Zip, Axis, array};
 
 #[derive(Debug)]
 pub struct Entry {
@@ -81,7 +86,17 @@ impl Entry {
 
         // TODO: implement the below numpy code
         // np.sqrt(((np.mgrid[0:size, 0:size] / size - np.array([[[x_center]], [[y_center]]]))**2).sum(axis=0)) < radius
-        // let coords_x: Array1<f64> = Array1::linspace(0.0, 1.0, size);
+        let coords: Array1<f64> = Array1::linspace(0.0, 1.0, size);
+        let coords = coords.broadcast((size, size)).expect("Failed broadcasting coordinates to 2d grid.");
+        let coords = ndarray::stack(Axis(0), &[coords, coords.t()]).expect("Failed to stack transposed coordinates!")
+
+        let offset_coords = coords - array![y_center, x_center].broadcast((2, size, size)).unwrap();
+        let distances: Array2<f64> = (offset_coords * offset_coords).sum_axis(Axis(0)).into_par_iter().map(|v| v.sqrt()).collect();
+        let distances = distances.broadcast(image.shape());
+        
+        
+        // TODO: how to set image based on these distances?
+
         // let coords_y: Array1<f64> = Array1::linspace(0.0, 1.0, size);
 
 
