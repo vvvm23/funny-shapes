@@ -1,5 +1,9 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
+use std::ops::Add;
+use rand::distributions::uniform::SampleUniform;
+
+use super::RangeOrSingle;
 
 use ndarray::prelude::*;
 use ndarray::Array3;
@@ -8,6 +12,42 @@ pub enum ShapeType {
     Square,
     Circle,
 }
+
+pub trait NewRandom2<T: std::cmp::PartialOrd + SampleUniform + Copy> {
+    fn new(x: T, y: T) -> Self;
+
+    fn new_random(lower: T, upper: T) -> Self where Self: Sized{
+        let x = rand::thread_rng().gen_range(lower..=upper);
+        let y = rand::thread_rng().gen_range(lower..=upper);
+
+        Self::new(x, y)
+    }
+
+    fn new_from_range_or_single(range_or_single: &RangeOrSingle<T>) -> Self where Self: Sized {
+        match range_or_single {
+            RangeOrSingle::Range(l, u) => Self::new_random(*l, *u),
+            RangeOrSingle::Single(v) => Self::new(*v, *v)
+        }
+    }
+}
+
+pub trait NewRandom1 <T: std::cmp::PartialOrd + SampleUniform + Copy> {
+    fn new(v: T) -> Self;
+
+    fn new_random(lower: T, upper: T) -> Self where Self: Sized{
+        let v = rand::thread_rng().gen_range(lower..=upper);
+
+        Self::new(v)
+    }
+
+    fn new_from_range_or_single(range_or_single: &RangeOrSingle<T>) -> Self where Self: Sized {
+        match range_or_single {
+            RangeOrSingle::Range(l, u) => Self::new_random(*l, *u),
+            RangeOrSingle::Single(v) => Self::new(*v)
+        }
+    }
+}
+
 
 #[derive(Debug, Clone, Copy)]
 pub struct Color(pub u8, pub u8, pub u8);
@@ -33,9 +73,8 @@ impl Color {
 }
 #[derive(Debug)]
 pub struct Position(pub f64, pub f64);
-
-impl Position {
-    pub fn new(x: f64, y: f64) -> Self {
+impl NewRandom2<f64> for Position {
+    fn new(x: f64, y: f64) -> Self {
         if x < 0.0 || x > 1.0 || y < 0.0 || y > 1.0 {
             panic!("Specified position was out of range [0, 1]. Got {x},{y}");
         }
@@ -43,41 +82,31 @@ impl Position {
         Position(x, y)
     }
 
-    pub fn new_random(lower: f64, upper: f64) -> Self {
-        let x = rand::thread_rng().gen_range(lower..=upper);
-        let y = rand::thread_rng().gen_range(lower..=upper);
-
-        Self::new(x, y)
-    }
 }
 
 #[derive(Debug)]
 pub struct Velocity(f64, f64);
 
-impl Velocity {
-    pub fn new(x: f64, y: f64) -> Self {
+impl NewRandom2<f64> for Velocity {
+    fn new(x: f64, y: f64) -> Self {
         Velocity(x, y)
     }
+}
 
-    pub fn new_random(lower: f64, upper: f64) -> Self {
-        let x = rand::thread_rng().gen_range(lower..=upper);
-        let y = rand::thread_rng().gen_range(lower..=upper);
+impl Add<Velocity> for Position {
+    type Output = Position;
 
-        Self::new(x, y)
+    fn add(self, other: Velocity) -> Position {
+        Position(self.0 + other.0, self.1 + other.1)
     }
 }
 
 #[derive(Debug)]
 pub struct Size(pub f64);
 
-impl Size {
-    pub fn new(size: f64) -> Self {
+impl NewRandom1<f64> for Size {
+    fn new(size: f64) -> Self {
         Self(size)
-    }
-
-    pub fn new_random(lower: f64, upper: f64) -> Self {
-        let v = rand::thread_rng().gen_range(lower..=upper);
-        Self::new(v)
     }
 }
 

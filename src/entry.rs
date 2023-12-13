@@ -1,9 +1,9 @@
 use rand::seq::SliceRandom;
 
-use super::shape::{Color, Position, Shape, ShapeType, Size, Velocity};
+use super::shape::{Color, Position, Shape, ShapeType, Size, Velocity, NewRandom1, NewRandom2};
 use super::RangeOrSingle;
 
-use ndarray::{Array3, AxisDescription, Slice, Zip};
+use ndarray::{Array1, Array3, AxisDescription, Slice, Zip};
 
 #[derive(Debug)]
 pub struct Entry {
@@ -35,22 +35,9 @@ impl Entry {
                     .expect("Failed picking random shape from vec of possible shapes!"),
             );
             shape.color = Color::new_random_from_palette(&color_palette);
-
-            // TODO: replace this stuff with traits doing such on ranges?
-            shape.size = match size_range {
-                RangeOrSingle::Range(l, u) => Size::new_random(*l, *u),
-                RangeOrSingle::Single(v) => Size::new(*v),
-            };
-
-            shape.position = match position_range {
-                RangeOrSingle::Range(l, u) => Position::new_random(*l, *u),
-                RangeOrSingle::Single(v) => Position::new(*v, *v),
-            };
-
-            shape.velocity = match velocity_range {
-                RangeOrSingle::Range(l, u) => Velocity::new_random(*l, *u),
-                RangeOrSingle::Single(v) => Velocity::new(*v, *v),
-            };
+            shape.size = Size::new_from_range_or_single(size_range);
+            shape.position = Position::new_from_range_or_single(position_range);
+            shape.velocity = Velocity::new_from_range_or_single(velocity_range);
 
             entry.shapes.push(shape);
         }
@@ -60,7 +47,6 @@ impl Entry {
 
     fn render_square(image: &mut Array3<f64>, shape: &Shape, size: usize) {
         let float_to_coord = |f: f64| (f * (size as f64)) as isize;
-        // TODO: render square onto image
 
         let x1 = float_to_coord(shape.position.0);
         let y1 = float_to_coord(shape.position.1);
@@ -93,12 +79,21 @@ impl Entry {
         let x_center = fix_center(shape.position.0 + radius);
         let y_center = fix_center(shape.position.1 + radius);
 
+        // TODO: implement the below numpy code
+        // np.sqrt(((np.mgrid[0:size, 0:size] / size - np.array([[[x_center]], [[y_center]]]))**2).sum(axis=0)) < radius
+        // let coords_x: Array1<f64> = Array1::linspace(0.0, 1.0, size);
+        // let coords_y: Array1<f64> = Array1::linspace(0.0, 1.0, size);
+
+
         // TODO: improve this? iterating over every pixel and channel
         Zip::indexed(image.view_mut()).par_map_collect(|(c, y, x), v| {
             let xf = coord_to_float(x);
             let yf = coord_to_float(y);
 
-            let dist = ((xf - x_center).powf(2.0) + (yf - y_center).powf(2.0)).sqrt();
+            let xd = xf - x_center;
+            let yd = yf - y_center;
+
+            let dist = (xd * xd + yd * yd).sqrt();
 
             if dist <= radius {
                 *v = {
@@ -114,7 +109,6 @@ impl Entry {
             };
         });
 
-        // Entry::render_square_at_coordinate(image, shape, size);
     }
 
     pub fn render_entry(&self, size: u16) -> Array3<f64> {

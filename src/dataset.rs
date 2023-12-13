@@ -32,10 +32,6 @@ impl Dataset {
         self
     }
 
-    // pub fn color_palette(mut self, color_palette: Vec<Color>) -> Self {
-    //     self.color_palette = color_palette;
-    //     self
-    // }
     pub fn add_color(mut self, r: u8, g: u8, b: u8) -> Self {
         self.color_palette.push(Color::new(r, g, b));
         self
