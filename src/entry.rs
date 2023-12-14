@@ -1,14 +1,14 @@
-use std::intrinsics::offset;
+// use std::intrinsics::offset;
 
 use rand::seq::SliceRandom;
-use rayon::iter::IntoParallelIterator;
-use rayon::iter::IntoParallelRefMutIterator;
-use rayon::iter::ParallelIterator
+// use rayon::iter::IntoParallelIterator;
+// use rayon::iter::IntoParallelRefMutIterator;
+// use rayon::iter::ParallelIterator
 
-use super::shape::{Color, Position, Shape, ShapeType, Size, Velocity, NewRandom1, NewRandom2};
+use super::shape::{Color, NewRandom1, NewRandom2, Position, Shape, ShapeType, Size, Velocity};
 use super::RangeOrSingle;
 
-use ndarray::{Array1, Array2, Array3, AxisDescription, Slice, Zip, Axis, array};
+use ndarray::{array, Array1, Array2, Array3, Axis, AxisDescription, Slice, Zip};
 
 #[derive(Debug)]
 pub struct Entry {
@@ -86,19 +86,15 @@ impl Entry {
 
         // TODO: implement the below numpy code
         // np.sqrt(((np.mgrid[0:size, 0:size] / size - np.array([[[x_center]], [[y_center]]]))**2).sum(axis=0)) < radius
-        let coords: Array1<f64> = Array1::linspace(0.0, 1.0, size);
-        let coords = coords.broadcast((size, size)).expect("Failed broadcasting coordinates to 2d grid.");
-        let coords = ndarray::stack(Axis(0), &[coords, coords.t()]).expect("Failed to stack transposed coordinates!")
 
-        let offset_coords = coords - array![y_center, x_center].broadcast((2, size, size)).unwrap();
-        let distances: Array2<f64> = (offset_coords * offset_coords).sum_axis(Axis(0)).into_par_iter().map(|v| v.sqrt()).collect();
-        let distances = distances.broadcast(image.shape());
-        
-        
+        // let coords: Array1<f64> = Array1::linspace(0.0, 1.0, size);
+        // let coords = coords.broadcast((size, size)).expect("Failed broadcasting coordinates to 2d grid.");
+        // let coords = ndarray::stack(Axis(0), &[coords, coords.t()]).expect("Failed to stack transposed coordinates!")
+
+        // let offset_coords = coords - array![y_center, x_center].broadcast((2, size, size)).unwrap();
+        // let distances: Array2<f64> = (offset_coords * offset_coords).sum_axis(Axis(0)).into_par_iter().map(|v| v.sqrt()).collect();
+        // let distances = distances.broadcast(image.shape());
         // TODO: how to set image based on these distances?
-
-        // let coords_y: Array1<f64> = Array1::linspace(0.0, 1.0, size);
-
 
         // TODO: improve this? iterating over every pixel and channel
         Zip::indexed(image.view_mut()).par_map_collect(|(c, y, x), v| {
@@ -123,7 +119,6 @@ impl Entry {
                 }
             };
         });
-
     }
 
     pub fn render_entry(&self, size: u16) -> Array3<f64> {
@@ -137,5 +132,11 @@ impl Entry {
             };
         }
         image
+    }
+
+    pub fn step_entry(&mut self, step_size: f64) {
+        for shape in self.shapes.iter_mut() {
+            shape.step_shape(step_size);
+        }
     }
 }
