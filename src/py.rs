@@ -1,10 +1,10 @@
 use ndarray::parallel::prelude::IntoParallelIterator;
-use numpy::{IntoPyArray, PyArray3, PyArray4, ToPyArray};
+use numpy::{IntoPyArray, PyArray3, PyArray4, PyArray5, ToPyArray};
 use pyo3::{pyclass, pymethods, pymodule, types::PyModule, PyResult, Python};
 use rayon::prelude::*;
 
 use crate::{Dataset, ShapeType};
-use ndarray::{stack, Array3, ArrayView3, Axis};
+use ndarray::{stack, Array3, Array4, ArrayView3, ArrayView4, Axis};
 
 #[pymodule]
 fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
@@ -47,8 +47,14 @@ fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
 
     impl PyDataset {
         fn get_random_frame(&self, size: u16) -> Array3<f64> {
-            let entry = self.inner.generate_random_entry();
-            entry.render_entry(size)
+            self.inner.get_random_image_array(size)
+            // let entry = self.inner.generate_random_entry();
+            // entry.render_entry(size)
+        }
+
+        fn get_random_video(&self, num_frames: usize, size: u16, step_size: f64) -> Array4<f64> {
+            self.inner
+                .get_random_video_array(num_frames, size, step_size)
         }
     }
 
@@ -101,6 +107,39 @@ fn funnyshapes<'py>(_py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
             let frames = stack(Axis(0), &frames).expect("TODO");
 
             frames.to_pyarray(py)
+        }
+
+        #[pyo3(name = "get_random_video")]
+        fn get_random_video_py<'py>(
+            &self,
+            py: Python<'py>,
+            num_frames: usize,
+            size: u16,
+            step_size: f64,
+        ) -> &'py PyArray4<f64> {
+            let array = self.get_random_video(num_frames, size, step_size);
+            array.into_pyarray(py)
+        }
+
+        #[pyo3(name = "get_random_video_batch")]
+        fn get_random_video_batch_py<'py>(
+            &self,
+            py: Python<'py>,
+            batch_size: usize,
+            num_frames: usize,
+            size: u16,
+            step_size: f64,
+        ) -> &'py PyArray5<f64> {
+            let mut batch = Vec::with_capacity(batch_size);
+            (0..batch_size)
+                .into_par_iter()
+                .map(|_| self.get_random_video(num_frames, size, step_size))
+                .collect_into_vec(&mut batch);
+
+            let batch: Vec<ArrayView4<f64>> = batch.iter().map(|f| ArrayView4::from(f)).collect();
+            let batch = stack(Axis(0), &batch).expect("TODO");
+
+            batch.to_pyarray(py)
         }
     }
 

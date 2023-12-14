@@ -1,6 +1,7 @@
 use super::entry::Entry;
 use super::shape::{Color, ShapeType};
 use super::RangeOrSingle;
+use ndarray::{s, Array3, Array4, Axis};
 
 use rand::Rng;
 #[derive(Debug)]
@@ -93,6 +94,32 @@ impl Dataset {
             &self.position_range,
             &self.velocity_range,
         )
+    }
+
+    pub fn get_random_image_array(&self, size: u16) -> Array3<f64> {
+        let entry = self.generate_random_entry();
+        entry.render_entry(size)
+    }
+
+    pub fn get_random_video_array(
+        &self,
+        num_frames: usize,
+        size: u16,
+        step_size: f64,
+    ) -> Array4<f64> {
+        let mut entry = self.generate_random_entry();
+
+        let mut video_array = Array4::zeros((num_frames as usize, 3, size as usize, size as usize));
+        for i in 0..num_frames {
+            let array = entry.render_entry(size);
+            entry.step_entry(step_size);
+
+            video_array
+                .slice_mut(s![i..i + 1, .., .., ..])
+                .assign(&array);
+        }
+
+        video_array
     }
 }
 
